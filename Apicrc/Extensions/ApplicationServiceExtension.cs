@@ -15,13 +15,17 @@ namespace Apicrc.Extensions
     public static class ApplicationServiceExtension
     {
         public static void ConfigureCors(this IServiceCollection services) =>
-        services.AddCors(options =>
-        {
-            options.AddPolicy("CorsPolicy", builder =>
-            builder.AllowAnyOrigin()    //WithOrigins("https://domini.com")
-            .AllowAnyMethod()           //WithMethods(*GET", "POST")
-            .AllowAnyHeader());         //WithHeaders(*accept*, "content-type")
-        });
+            services.AddCors(options =>
+            {
+                options.AddPolicy(
+                    "CorsPolicy",
+                    builder =>
+                        builder
+                            .AllowAnyOrigin() //WithOrigins("https://domini.com")
+                            .AllowAnyMethod() //WithMethods(*GET", "POST")
+                            .AllowAnyHeader()
+                ); //WithHeaders(*accept*, "content-type")
+            });
 
         public static void ConfigureRatelimiting(this IServiceCollection services)
         {
@@ -36,15 +40,16 @@ namespace Apicrc.Extensions
                 options.RealIpHeader = "X-Real-IP";
                 options.GeneralRules = new List<RateLimitRule>
                 {
-                new RateLimitRule
-                {
-                    Endpoint = "*",
-                    Period = "10s",
-                    Limit = 2
-                }
+                    new RateLimitRule
+                    {
+                        Endpoint = "*",
+                        Period = "10s",
+                        Limit = 2
+                    }
                 };
             });
         }
+
         public static void ConfigureApiVersioning(this IServiceCollection services)
         {
             services.AddApiVersioning(options =>
@@ -57,20 +62,21 @@ namespace Apicrc.Extensions
                     new HeaderApiVersionReader("X-Version")
                 );
                 options.ReportApiVersions = true;
-
             });
         }
+
         public static void AddJwt(this IServiceCollection services, IConfiguration configuration)
         {
             //Configuration from AppSettings
             services.Configure<JWT>(configuration.GetSection("JWT"));
 
             //Adding Athentication - JWT
-            services.AddAuthentication(options =>
-            {
-                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-            })
+            services
+                .AddAuthentication(options =>
+                {
+                    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                })
                 .AddJwtBearer(o =>
                 {
                     o.RequireHttpsMetadata = false;
@@ -84,7 +90,9 @@ namespace Apicrc.Extensions
                         ClockSkew = TimeSpan.Zero,
                         ValidIssuer = configuration["JWT:Issuer"],
                         ValidAudience = configuration["JWT:Audience"],
-                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["JWT:Key"]))
+                        IssuerSigningKey = new SymmetricSecurityKey(
+                            Encoding.UTF8.GetBytes(configuration["JWT:Key"])
+                        )
                     };
                 });
         }

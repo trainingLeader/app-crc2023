@@ -13,10 +13,12 @@ public class UnitOfWork : IUnitOfWork, IDisposable
     private readonly CrcdbContext _context;
     private IRolRepository _roles;
     private IUserRepository _users;
+
     public UnitOfWork(CrcdbContext context)
     {
         _context = context;
     }
+
     public IRolRepository Roles
     {
         get
@@ -40,6 +42,7 @@ public class UnitOfWork : IUnitOfWork, IDisposable
             return _users;
         }
     }
+
     public async Task<int> SaveAsync()
     {
         return await _context.SaveChangesAsync();
@@ -50,4 +53,3 @@ public class UnitOfWork : IUnitOfWork, IDisposable
         _context.Dispose();
     }
 }
-

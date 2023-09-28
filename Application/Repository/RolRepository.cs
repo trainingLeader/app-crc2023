@@ -10,7 +10,6 @@ namespace Application.Repository;
 
 public class RolRepository : GenericRepository<Rol>, IRolRepository
 {
-    public RolRepository(CrcdbContext context) : base(context)
-    {
-    }
+    public RolRepository(CrcdbContext context)
+        : base(context) { }
 }

@@ -12,11 +12,13 @@ public class UserRepository : GenericRepository<User>, IUserRepository
 {
     private readonly CrcdbContext _context;
 
-    public UserRepository(CrcdbContext context) : base(context)
+    public UserRepository(CrcdbContext context)
+        : base(context)
     {
         _context = context;
     }
-        public async Task<User> GetByRefreshTokenAsync(string refreshToken)
+
+    public async Task<User> GetByRefreshTokenAsync(string refreshToken)
     {
         return await _context.Users
             .Include(u => u.Rols)

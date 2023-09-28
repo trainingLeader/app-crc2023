@@ -16,9 +16,7 @@ public class ApiResponse
         Message = message ?? GetDefaultMessage(statusCode);
     }
 
-    public ApiResponse()
-    {
-    }
+    public ApiResponse() { }
 
     private string GetDefaultMessage(int statusCode)
     {

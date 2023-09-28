@@ -13,8 +13,11 @@ public class ExceptionMiddleware
     private readonly ILogger<ExceptionMiddleware> _logger;
     private readonly IHostEnvironment _env;
 
-    public ExceptionMiddleware(RequestDelegate next,
-        ILogger<ExceptionMiddleware> logger, IHostEnvironment env)
+    public ExceptionMiddleware(
+        RequestDelegate next,
+        ILogger<ExceptionMiddleware> logger,
+        IHostEnvironment env
+    )
     {
         _next = next;
         _logger = logger;
@@ -36,8 +39,8 @@ public class ExceptionMiddleware
             context.Response.StatusCode = statusCode;
 
             var response = _env.IsDevelopment()
-                            ? new ApiException(statusCode, ex.Message, ex.StackTrace.ToString())
-                            : new ApiException(statusCode);
+                ? new ApiException(statusCode, ex.Message, ex.StackTrace.ToString())
+                : new ApiException(statusCode);
 
             var options = new JsonSerializerOptions
             {
@@ -46,8 +49,6 @@ public class ExceptionMiddleware
             var json = JsonSerializer.Serialize(response, options);
 
             await context.Response.WriteAsync(json);
-
         }
     }
 }
-

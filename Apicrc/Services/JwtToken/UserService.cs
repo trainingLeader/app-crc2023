@@ -16,13 +16,17 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace Apicrc.Services.JwtToken;
 
-
 public class UserService : IUserService
 {
     private readonly JWT _jwt;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IPasswordHasher<User> _passwordHasher;
-    public UserService(IUnitOfWork unitOfWork, IOptions<JWT> jwt, IPasswordHasher<User> passwordHasher)
+
+    public UserService(
+        IUnitOfWork unitOfWork,
+        IOptions<JWT> jwt,
+        IPasswordHasher<User> passwordHasher
+    )
     {
         _jwt = jwt.Value;
         _unitOfWork = unitOfWork;
@@ -31,23 +35,19 @@ public class UserService : IUserService
 
     public async Task<string> RegisterAsync(RegisterDto registerDto)
     {
-        var user = new User
-        {
-            Email = registerDto.Email,
-            Username = registerDto.Username
-        };
+        var user = new User { Email = registerDto.Email, Username = registerDto.Username };
 
         user.Password = _passwordHasher.HashPassword(user, registerDto.Password); //Encrypt password
 
         var existingUser = _unitOfWork.Users
-                                    .Find(u => u.Username.ToLower() == registerDto.Username.ToLower())
-                                    .FirstOrDefault();
+            .Find(u => u.Username.ToLower() == registerDto.Username.ToLower())
+            .FirstOrDefault();
 
         if (existingUser == null)
         {
             var rolDefault = _unitOfWork.Roles
-                                    .Find(u => u.Nombre == Authorization.rol_default.ToString())
-                                    .First();
+                .Find(u => u.Nombre == Authorization.rol_default.ToString())
+                .First();
             try
             {
                 user.Rols.Add(rolDefault);
@@ -67,11 +67,11 @@ public class UserService : IUserService
             return $"User {registerDto.Username} already registered.";
         }
     }
+
     public async Task<DataUserDto> GetTokenAsync(LoginDto model)
     {
         DataUserDto dataUserDto = new DataUserDto();
-        var user = await _unitOfWork.Users
-                    .GetByUsernameAsync(model.Username);
+        var user = await _unitOfWork.Users.GetByUsernameAsync(model.Username);
 
         if (user == null)
         {
@@ -89,13 +89,13 @@ public class UserService : IUserService
             dataUserDto.Token = new JwtSecurityTokenHandler().WriteToken(jwtSecurityToken);
             dataUserDto.Email = user.Email;
             dataUserDto.UserName = user.Username;
-            dataUserDto.Roles = user.Rols
-                                            .Select(u => u.Nombre)
-                                            .ToList();
+            dataUserDto.Roles = user.Rols.Select(u => u.Nombre).ToList();
 
             if (user.RefreshTokens.Any(a => a.IsActive))
             {
-                var activeRefreshToken = user.RefreshTokens.Where(a => a.IsActive == true).FirstOrDefault();
+                var activeRefreshToken = user.RefreshTokens
+                    .Where(a => a.IsActive == true)
+                    .FirstOrDefault();
                 dataUserDto.RefreshToken = activeRefreshToken.Token;
                 dataUserDto.RefreshTokenExpiration = activeRefreshToken.Expires;
             }
@@ -115,11 +115,10 @@ public class UserService : IUserService
         dataUserDto.Message = $"Credenciales incorrectas para el usuario {user.Username}.";
         return dataUserDto;
     }
+
     public async Task<string> AddRoleAsync(AddRoleDto model)
     {
-
-        var user = await _unitOfWork.Users
-                    .GetByUsernameAsync(model.Username);
+        var user = await _unitOfWork.Users.GetByUsernameAsync(model.Username);
         if (user == null)
         {
             return $"User {model.Username} does not exists.";
@@ -130,13 +129,12 @@ public class UserService : IUserService
         if (result == PasswordVerificationResult.Success)
         {
             var rolExists = _unitOfWork.Roles
-                                        .Find(u => u.Nombre.ToLower() == model.Role.ToLower())
-                                        .FirstOrDefault();
+                .Find(u => u.Nombre.ToLower() == model.Role.ToLower())
+                .FirstOrDefault();
 
             if (rolExists != null)
             {
-                var userHasRole = user.Rols
-                                            .Any(u => u.Id == rolExists.Id);
+                var userHasRole = user.Rols.Any(u => u.Id == rolExists.Id);
 
                 if (userHasRole == false)
                 {
@@ -152,12 +150,12 @@ public class UserService : IUserService
         }
         return $"Invalid Credentials";
     }
+
     public async Task<DataUserDto> RefreshTokenAsync(string refreshToken)
     {
         var dataUserDto = new DataUserDto();
 
-        var usuario = await _unitOfWork.Users
-                        .GetByRefreshTokenAsync(refreshToken);
+        var usuario = await _unitOfWork.Users.GetByRefreshTokenAsync(refreshToken);
 
         if (usuario == null)
         {
@@ -187,13 +185,12 @@ public class UserService : IUserService
         dataUserDto.Token = new JwtSecurityTokenHandler().WriteToken(jwtSecurityToken);
         dataUserDto.Email = usuario.Email;
         dataUserDto.UserName = usuario.Username;
-        dataUserDto.Roles = usuario.Rols
-                                        .Select(u => u.Nombre)
-                                        .ToList();
+        dataUserDto.Roles = usuario.Rols.Select(u => u.Nombre).ToList();
         dataUserDto.RefreshToken = newRefreshToken.Token;
         dataUserDto.RefreshTokenExpiration = newRefreshToken.Expires;
         return dataUserDto;
     }
+
     private RefreshToken CreateRefreshToken()
     {
         var randomNumber = new byte[32];
@@ -208,6 +205,7 @@ public class UserService : IUserService
             };
         }
     }
+
     private JwtSecurityToken CreateJwtToken(User usuario)
     {
         var roles = usuario.Rols;
@@ -218,20 +216,23 @@ public class UserService : IUserService
         }
         var claims = new[]
         {
-                                new Claim(JwtRegisteredClaimNames.Sub, usuario.Username),
-                                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                                new Claim(JwtRegisteredClaimNames.Email, usuario.Email),
-                                new Claim("uid", usuario.Id.ToString())
-                        }
-        .Union(roleClaims);
+            new Claim(JwtRegisteredClaimNames.Sub, usuario.Username),
+            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new Claim(JwtRegisteredClaimNames.Email, usuario.Email),
+            new Claim("uid", usuario.Id.ToString())
+        }.Union(roleClaims);
         var symmetricSecurityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwt.Key));
-        var signingCredentials = new SigningCredentials(symmetricSecurityKey, SecurityAlgorithms.HmacSha256);
+        var signingCredentials = new SigningCredentials(
+            symmetricSecurityKey,
+            SecurityAlgorithms.HmacSha256
+        );
         var jwtSecurityToken = new JwtSecurityToken(
             issuer: _jwt.Issuer,
             audience: _jwt.Audience,
             claims: claims,
             expires: DateTime.UtcNow.AddMinutes(_jwt.DurationInMinutes),
-            signingCredentials: signingCredentials);
+            signingCredentials: signingCredentials
+        );
         return jwtSecurityToken;
     }
 }

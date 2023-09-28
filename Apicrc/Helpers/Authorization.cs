@@ -13,6 +13,7 @@ namespace Apicrc.Helpers
             Manager,
             Employee
         }
+
         public const Roles rol_default = Roles.Employee;
     }
 }
